@@ -1,0 +1,9 @@
+README.md
+README.md
+.vscode/launch.json
+.vscode/settings.json
+data/raw
+data/processed
+scripts/archive
+scripts/__mnl-ranked-choice.iter
+outputs/archive

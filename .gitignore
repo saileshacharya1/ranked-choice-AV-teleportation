@@ -7,3 +7,4 @@ data/processed
 scripts/archive
 scripts/__mnl-ranked-choice.iter
 outputs/archive
+/.gitignore

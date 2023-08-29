@@ -216,9 +216,6 @@ df = df.drop(df.columns[df.isnull().any()], axis=1)
 df = df.select_dtypes(exclude=["object"])
 df = df.sort_values("id")
 
-# difference in travel usefulness between HV and AV
-df["tu_diff"] = df["tu_av"] - df["tu_hv"]
-
 # export the prepared dataset
 df.to_pickle("../data/processed/prepared_data.pkl")
 # ---------------------------------------------------------------------------------------------------------------------#

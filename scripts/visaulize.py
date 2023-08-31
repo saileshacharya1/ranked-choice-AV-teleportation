@@ -15,10 +15,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import matplotlib.ticker as mtick
-import pandas as pd
-from scipy.stats import chi2_contingency
-from scipy.stats import ttest_rel
-
+import scipy.stats as stats
+from statsmodels.stats.contingency_tables import mcnemar
 
 # import data
 df = pd.read_pickle("../data/processed/prepared_data.pkl")
@@ -28,7 +26,8 @@ df.describe
 
 
 # ---------------------------------------------------------------------------------------------------------------------#
-## chi-square tests of travel based activities
+## McNemar tests of travel based activities in HV and AV travel
+
 # list of activity columns
 activities = [
     "tba_g1",
@@ -41,28 +40,40 @@ activities = [
 ]
 
 # significance level
-alpha = 0.05  
+alpha = 0.05
 
-# chi-square test
+# McNemar test (one-sided)
 for activity in activities:
     # columns for AV and HV preferences
     av_column = f"{activity}_av_d"
     hv_column = f"{activity}_hv_d"
 
-    # create contingency table
+    # create a contingency table
     contingency_table = pd.crosstab(df[av_column], df[hv_column])
 
-    # perform chi-squared test
-    chi2, p, _, _ = chi2_contingency(contingency_table)
+    # perform McNemar test
+    result = mcnemar(contingency_table, exact=True)
 
     print(f"Activity: {activity}")
-    print(f"Chi-squared statistic: {chi2}")
-    print(f"P-value: {p}")
+    print(f"McNemar statistic: {result.statistic}")
 
-    if p < alpha:
-        print("Reject the null hypothesis: Preference is different between AV and HV.")
+    # calculate one-sided p-value for the upper tail
+    one_sided_p_value = result.pvalue / 2
+
+    if activity in ["tba_g1", "tba_g2", "tba_g3", "tba_g4", "tba_g6"]:
+        # AV > HV (upper-tailed)
+        print(f"One-sided p-value (AV > HV): {one_sided_p_value}")
+        if one_sided_p_value < alpha:
+            print("Reject the null hypothesis: AV preference is greater than HV preference.")
+        else:
+            print("Fail to reject the null hypothesis: AV preference is not greater than HV preference.")
     else:
-        print("Fail to reject the null hypothesis: Preference is similar between AV and HV.")
+        # HV > AV (lower-tailed)
+        print(f"One-sided p-value (HV > AV): {one_sided_p_value}")
+        if one_sided_p_value < alpha:
+            print("Reject the null hypothesis: HV preference is greater than AV preference.")
+        else:
+            print("Fail to reject the null hypothesis: HV preference is not greater than AV preference.")
 
     print("\n")
 # ---------------------------------------------------------------------------------------------------------------------#
@@ -100,13 +111,13 @@ font_prop = fm.FontProperties(fname=font_path, size=10)
 
 # define new x-axis labels
 x_labels = {
-    'g1': 'Use social \nmedia',
-    'g2': 'Work/study/\nread',
+    'g1': 'Use social \nmedia*',
+    'g2': 'Work/study/\nread*',
     'g3': 'Interact',
-    'g4': 'Entertain',
+    'g4': 'Entertain*',
     'g5': 'Eat/care',
-    'g6': 'Relax',
-    'g7': 'Watch road'
+    'g6': 'Relax*',
+    'g7': 'Watch road~'
 }
 
 # pivot
@@ -153,21 +164,21 @@ plt.show()
 
 
 # ---------------------------------------------------------------------------------------------------------------------#
-## t-test of travel time usefulness
+## wilcoxon signed-rank test
 
-# paired sample t-test
-t_statistic, p_value = ttest_rel(df['tu_av'], df['tu_hv'])
+# perform Wilcoxon signed-rank test
+statistic, p_value = stats.wilcoxon(df['tu_av'], df['tu_hv'], alternative='less')
 
-# significance level
-alpha = 0.05  
+# test statistic and p-value
+print("Test Statistic:", statistic)
+print("P-value:", p_value)
 
-# result
-print(f"T-Statistic: {t_statistic}")
-print(f"P-Value: {p_value}")
+# significance
+alpha = 0.05
 if p_value < alpha:
-    print("Reject the null hypothesis: Travel time usefulness is different between AV and HV.")
+    print("Reject the null hypothesis: The distributions are significantly different (lower).")
 else:
-    print("Fail to reject the null hypothesis: Travel time usefulness is similar between AV and HV.")
+    print("Fail to reject the null hypothesis: No significant (lower) difference found.")
 # ---------------------------------------------------------------------------------------------------------------------#
 
 
